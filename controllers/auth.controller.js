@@ -1,47 +1,83 @@
-const bcrypt = require("bcrypt-nodejs");
-const jwt = require("jsonwebtoken");
-const keys = require("../keys");
-const User = require("../models/user.model");
+const authService = require('../services/auth.service')
+const { validate, schemas } = require('../middlewares/validation')
 
-module.exports.login = async (req, res) => {
-  const candidate = await User.findOne({ name: req.body.name });
-
-  if (candidate) {
-    const Name = req.body.name;
-    const id = candidate._id;
-    const isPassCorrect = bcrypt.compareSync(
-      req.body.password,
-      candidate.password
-    );
-    if (isPassCorrect) {
-      const token = jwt.sign(
-        {
-          name: candidate.name,
-          userId: candidate._id,
-        },
-        keys.JWT,
-        { expiresIn: 60 * 60 }
-      );
-      res.status(200).json({ token, Name, id });
-    } else {
-      res.status(401).json({ message: "PASSWORD_NOT_VALID" });
+const login = [
+  validate(schemas.authLogin),
+  async (req, res, next) => {
+    try {
+      const { username, password } = req.validated
+      const result = await authService.login(username, password)
+      res.json({ success: true, ...result })
+    } catch (e) {
+      next(e)
     }
-  } else {
-    res.status(404).json({ message: "USER_NOT_FOUND" });
   }
-};
+]
 
-module.exports.createUser = async (req, res) => {
-  const candidate = await User.findOne({ name: req.body.name });
-  if (candidate) {
-    res.status(409).json({ message: USER__BUSY });
-  } else {
-    const salt = bcrypt.genSaltSync(10);
-    const user = new User({
-      name: req.body.name,
-      password: bcrypt.hashSync(req.body.password, salt),
-    });
-    await user.save();
-    res.status(201).json(user);
+const register = [
+  validate(schemas.authRegister),
+  async (req, res, next) => {
+    try {
+      const { username, password, role } = req.validated
+      const result = await authService.register(username, password, role)
+      res.status(201).json({ success: true, ...result })
+    } catch (e) {
+      next(e)
+    }
   }
-};
+]
+
+const me = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'UNAUTHORIZED',
+        message: 'Not authenticated'
+      })
+    }
+    res.json({
+      success: true,
+      data: {
+        id: req.user._id,
+        username: req.user.username,
+        role: req.user.role
+      }
+    })
+  } catch (e) {
+    next(e)
+  }
+}
+
+const changePassword = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'UNAUTHORIZED',
+        message: 'Not authenticated'
+      })
+    }
+    
+    const { oldPassword, newPassword } = req.body
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'BAD_REQUEST',
+        message: 'oldPassword and newPassword required'
+      })
+    }
+
+    await authService.changePassword(req.user._id, oldPassword, newPassword)
+    res.json({ success: true, message: 'Password changed' })
+  } catch (e) {
+    next(e)
+  }
+}
+
+module.exports = {
+  login,
+  register,
+  me,
+  changePassword
+}

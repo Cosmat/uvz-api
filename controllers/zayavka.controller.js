@@ -1,48 +1,127 @@
-const keys = require("../keys");
-const Zayavka = require("../models/zayavka.model");
+const zayavkaService = require('../services/zayavka.service')
+const { validate, validateQuery, schemas } = require('../middlewares/validation')
 
-module.exports.createZayavka = async (req, res) => {
-  try {
-    const zayavka = new Zayavka({
-      // Основные поля
-      tzeh: req.body.tzeh,
-      professia: req.body.professia,
-      description: req.body.description,
-      id_sozdatelya: req.body.id,
-      date: req.body.date,
+const getAll = [
+  validateQuery(schemas.queryParams),
+  async (req, res, next) => {
+    try {
+      const { page, limit, sort, tzeh, professia, status, search } = req.query
       
-      // Новые поля
-      requirements: req.body.requirements || "",
-      salary_min: req.body.salary_min || null,
-      salary_max: req.body.salary_max || null,
-      schedule: req.body.schedule || "Полный день",
-      experience_required: req.body.experience_required || "Без опыта",
-      contact_name: req.body.contact_name || "",
-      contact_phone: req.body.contact_phone || "",
-      contact_email: req.body.contact_email || "",
-      status: req.body.status || "Активная"
-    });
-    
-    await zayavka.save();
-    res.status(201).json({ 
-      message: "ZAYAVKA_CREATED",
-      zayavka: zayavka 
-    });
-  } catch (error) {
-    console.error("Ошибка при создании вакансии:", error);
-    res.status(500).json({ 
-      message: "Ошибка при создании вакансии",
-      error: error.message 
-    });
-  }
-};
-module.exports.del_Zayavka = async (req, res) => {
-  const candidate_to_delete = await Zayavka.findOne({ _id: req.body.dt });
-  if (candidate_to_delete) {
-    candidate_to_delete.remove();
-  } else {
-    res.status(500).json({ message: "SOMETHING WRONG" });
-  }
+      const filters = {}
+      if (tzeh) filters.tzeh = tzeh
+      if (professia) filters.professia = { $regex: professia, $options: 'i' }
+      if (status) filters.status = status
 
-  res.status(200).json({ message: "ZAYAVKA_DELETED" });
-};
+      let result
+      if (search) {
+        result = await zayavkaService.search(search, { page, limit })
+      } else {
+        result = await zayavkaService.getAll({ page, limit, filters, sort })
+      }
+
+      res.json({
+        success: true,
+        ...result
+      })
+    } catch (e) {
+      next(e)
+    }
+  }
+]
+
+const getById = async (req, res, next) => {
+  try {
+    const zayavka = await zayavkaService.getById(req.params.id)
+    res.json({ success: true, data: zayavka })
+  } catch (e) {
+    next(e)
+  }
+}
+
+const create = [
+  validate(schemas.zayavkaCreate),
+  async (req, res, next) => {
+    try {
+      const data = req.validated
+      if (req.user) data.id_sozdatelya = req.user._id.toString()
+      
+      const zayavka = await zayavkaService.create(data)
+      res.status(201).json({ success: true, data: zayavka })
+    } catch (e) {
+      next(e)
+    }
+  }
+]
+
+const update = [
+  validate(schemas.zayavkaUpdate),
+  async (req, res, next) => {
+    try {
+      const zayavka = await zayavkaService.update(req.params.id, req.validated)
+      res.json({ success: true, data: zayavka })
+    } catch (e) {
+      next(e)
+    }
+  }
+]
+
+const archive = async (req, res, next) => {
+  try {
+    const zayavka = await zayavkaService.archive(req.params.id)
+    res.json({ success: true, data: zayavka })
+  } catch (e) {
+    next(e)
+  }
+}
+
+const deleteZayavka = async (req, res, next) => {
+  try {
+    await zayavkaService.delete(req.params.id)
+    res.json({ success: true, message: 'Deleted' })
+  } catch (e) {
+    next(e)
+  }
+}
+
+const getByCreator = [
+  validateQuery(schemas.queryParams),
+  async (req, res, next) => {
+    try {
+      const { page, limit } = req.query
+      const creatorId = req.params.creatorId || (req.user ? req.user._id.toString() : null)
+      
+      if (!creatorId) {
+        return res.status(400).json({
+          success: false,
+          error: 'BAD_REQUEST',
+          message: 'Creator ID required'
+        })
+      }
+
+      const result = await zayavkaService.getByCreator(creatorId, { page, limit })
+      res.json({ success: true, ...result })
+    } catch (e) {
+      next(e)
+    }
+  }
+]
+
+const getStats = async (req, res, next) => {
+  try {
+    const stats = await zayavkaService.getStats()
+    res.json({ success: true, data: stats })
+  } catch (e) {
+    next(e)
+  }
+}
+
+module.exports = {
+  getAll,
+  getById,
+  create,
+  update,
+  archive,
+  delete: deleteZayavka,
+  getByCreator,
+  getStats
+}
