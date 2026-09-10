@@ -45,12 +45,12 @@ const schemas = {
   }),
 
   authLogin: Joi.object({
-    username: Joi.string().trim().min(3).max(30).required(),
+    username: Joi.string().trim().min(1).max(30).required(),
     password: Joi.string().min(1).max(100).required()
   }),
 
   authRegister: Joi.object({
-    username: Joi.string().trim().min(3).max(30).required(),
+    username: Joi.string().trim().min(1).max(30).required(),
     password: Joi.string().min(1).max(100).required(),
     role: Joi.string().valid('admin', 'moderator', 'user')
   }),
