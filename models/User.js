@@ -7,13 +7,13 @@ const userSchema = new Schema({
     required: true,
     unique: true,
     trim: true,
-    minlength: 3,
+    minlength: 1,
     maxlength: 30
   },
   password: {
     type: String,
     required: true,
-    minlength: 6,
+    minlength: 1,
     select: false // Never return password in queries
   },
   role: {
