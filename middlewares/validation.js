@@ -40,18 +40,18 @@ const schemas = {
 
   phoneTabelCreate: Joi.object({
     number_tzeh: Joi.string().trim().min(1).max(10).required(),
-    nuber_phone: Joi.string().trim().min(1).max(50).required(),
+    phone_number: Joi.string().trim().min(1).max(50).required(),
     description: Joi.string().trim().allow('', null).max(500)
   }),
 
   authLogin: Joi.object({
     username: Joi.string().trim().min(3).max(30).required(),
-    password: Joi.string().min(6).max(100).required()
+    password: Joi.string().min(1).max(100).required()
   }),
 
   authRegister: Joi.object({
     username: Joi.string().trim().min(3).max(30).required(),
-    password: Joi.string().min(6).max(100).required(),
+    password: Joi.string().min(1).max(100).required(),
     role: Joi.string().valid('admin', 'moderator', 'user')
   }),
 
