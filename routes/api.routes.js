@@ -51,7 +51,6 @@ router.post('/phones/bulk', auth, requireRole('admin'), phoneTabelController.bul
 router.patch('/phones/:tzeh', auth, requireRole('admin', 'moderator'), ...phoneTabelController.update)
 router.delete('/phones/:tzeh', auth, requireRole('admin'), phoneTabelController.delete)
 
-// One-time repair (protected by key)
-router.get('/admin/repair-phones', repairPhones)
+// One-time repair endpoint removed after successful data repair (2026-09-22)
 
 module.exports = router
