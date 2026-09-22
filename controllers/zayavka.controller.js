@@ -18,14 +18,8 @@ const getAll = [
 
       let result
       if (search) {
-        // Regex search across tzeh, professia, description, requirements (partial match, case-insensitive)
-        const rx = escapeRegex(search)
-        filters.$or = [
-          { tzeh: { $regex: rx, $options: 'i' } },
-          { professia: { $regex: rx, $options: 'i' } },
-          { description: { $regex: rx, $options: 'i' } },
-          { requirements: { $regex: rx, $options: 'i' } }
-        ]
+        // Search matches ONLY profession name (partial match, case-insensitive)
+        filters.professia = { $regex: escapeRegex(search), $options: 'i' }
         result = await zayavkaService.getAll({ page, limit, filters, sort })
       } else {
         result = await zayavkaService.getAll({ page, limit, filters, sort })
