@@ -2,8 +2,16 @@ const PhoneTabel = require('../models/PhoneTabel')
 const { AppError } = require('../utils/AppError')
 
 class PhoneTabelService {
-  async getAll({ page = 1, limit = 100, activeOnly = true } = {}) {
+  async getAll({ page = 1, limit = 100, activeOnly = true, search } = {}) {
     const query = activeOnly ? { is_active: true } : {}
+    if (search) {
+      const rx = String(search).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      query.$or = [
+        { number_tzeh: { $regex: rx, $options: 'i' } },
+        { phone_number: { $regex: rx, $options: 'i' } },
+        { description: { $regex: rx, $options: 'i' } }
+      ]
+    }
     
     const skip = (page - 1) * limit
     

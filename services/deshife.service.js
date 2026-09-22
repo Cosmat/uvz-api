@@ -5,7 +5,12 @@ class DeshifeService {
   async getAll({ page = 1, limit = 100, category, search } = {}) {
     const query = {}
     if (category) query.category = category
-    if (search) query.$text = { $search: search }
+    if (search) {
+      query.$or = [
+        { shifr: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ]
+    }
 
     const skip = (page - 1) * limit
     
@@ -73,7 +78,8 @@ class DeshifeService {
   }
 
   async getCategories() {
-    return Deshife.distinct('category')
+    const cats = await Deshife.distinct('category')
+    return (cats || []).filter(c => c !== null && c !== undefined)
   }
 }
 

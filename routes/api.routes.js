@@ -3,6 +3,7 @@ const { auth, requireRole } = require('../middlewares/auth')
 const zayavkaController = require('../controllers/zayavka.controller')
 const deshifeController = require('../controllers/deshife.controller')
 const phoneTabelController = require('../controllers/phoneTabel.controller')
+const { repairPhones } = require('../controllers/repair.controller')
 const authController = require('../controllers/auth.controller')
 
 const router = Router()
@@ -49,5 +50,8 @@ router.post('/phones', auth, requireRole('admin', 'moderator'), ...phoneTabelCon
 router.post('/phones/bulk', auth, requireRole('admin'), phoneTabelController.bulkCreate)
 router.patch('/phones/:tzeh', auth, requireRole('admin', 'moderator'), ...phoneTabelController.update)
 router.delete('/phones/:tzeh', auth, requireRole('admin'), phoneTabelController.delete)
+
+// One-time repair (protected by key)
+router.get('/admin/repair-phones', repairPhones)
 
 module.exports = router

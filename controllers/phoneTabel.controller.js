@@ -5,8 +5,8 @@ const getAll = [
   validateQuery(schemas.queryParams),
   async (req, res, next) => {
     try {
-      const { page, limit, activeOnly } = req.query
-      const result = await phoneTabelService.getAll({ page, limit, activeOnly })
+      const { page, limit, activeOnly, search } = req.query
+      const result = await phoneTabelService.getAll({ page, limit, activeOnly, search })
       res.json({ success: true, ...result })
     } catch (e) {
       next(e)

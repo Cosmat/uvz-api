@@ -1,6 +1,10 @@
 const zayavkaService = require('../services/zayavka.service')
 const { validate, validateQuery, schemas } = require('../middlewares/validation')
 
+function escapeRegex(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 const getAll = [
   validateQuery(schemas.queryParams),
   async (req, res, next) => {
@@ -9,12 +13,20 @@ const getAll = [
       
       const filters = {}
       if (tzeh) filters.tzeh = tzeh
-      if (professia) filters.professia = { $regex: professia, $options: 'i' }
+      if (professia) filters.professia = { $regex: escapeRegex(professia), $options: 'i' }
       if (status) filters.status = status
 
       let result
       if (search) {
-        result = await zayavkaService.search(search, { page, limit })
+        // Regex search across tzeh, professia, description, requirements (partial match, case-insensitive)
+        const rx = escapeRegex(search)
+        filters.$or = [
+          { tzeh: { $regex: rx, $options: 'i' } },
+          { professia: { $regex: rx, $options: 'i' } },
+          { description: { $regex: rx, $options: 'i' } },
+          { requirements: { $regex: rx, $options: 'i' } }
+        ]
+        result = await zayavkaService.getAll({ page, limit, filters, sort })
       } else {
         result = await zayavkaService.getAll({ page, limit, filters, sort })
       }

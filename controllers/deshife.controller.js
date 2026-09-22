@@ -1,12 +1,21 @@
 const deshifeService = require('../services/deshife.service')
 const { validate, validateQuery, schemas } = require('../middlewares/validation')
 
+function escapeRegex(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 const getAll = [
   validateQuery(schemas.queryParams),
   async (req, res, next) => {
     try {
       const { page, limit, category, search } = req.query
-      const result = await deshifeService.getAll({ page, limit, category, search })
+      const result = await deshifeService.getAll({
+        page,
+        limit,
+        category,
+        search: search ? escapeRegex(search) : undefined
+      })
       res.json({ success: true, ...result })
     } catch (e) {
       next(e)

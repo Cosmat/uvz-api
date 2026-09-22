@@ -7,7 +7,7 @@ const phoneTabelSchema = new Schema({
     unique: true,
     trim: true
   },
-  nuber_phone: {
+  phone_number: {
     type: String,
     required: true,
     trim: true
