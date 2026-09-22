@@ -1,0 +1,7 @@
+node_modules/
+.env
+token.txt
+token_only.txt
+*.log
+dist/
+coverage/
