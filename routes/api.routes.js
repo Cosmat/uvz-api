@@ -4,6 +4,7 @@ const zayavkaController = require('../controllers/zayavka.controller')
 const deshifeController = require('../controllers/deshife.controller')
 const phoneTabelController = require('../controllers/phoneTabel.controller')
 const { repairPhones } = require('../controllers/repair.controller')
+const { seedZayavki } = require('../controllers/seed.controller')
 const authController = require('../controllers/auth.controller')
 
 const router = Router()
@@ -52,5 +53,8 @@ router.patch('/phones/:tzeh', auth, requireRole('admin', 'moderator'), ...phoneT
 router.delete('/phones/:tzeh', auth, requireRole('admin'), phoneTabelController.delete)
 
 // One-time repair endpoint removed after successful data repair (2026-09-22)
+
+// One-time seed: import 50 real UZV vacancies from old site archive (protected by key)
+router.get('/admin/seed-zayavki', seedZayavki)
 
 module.exports = router
