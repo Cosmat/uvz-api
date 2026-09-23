@@ -62,6 +62,8 @@ const schemas = {
     tzeh: Joi.string().trim(),
     professia: Joi.string().trim(),
     status: Joi.string().trim(),
+    schedule: Joi.string().trim(),
+    experience_required: Joi.string().trim(),
     category: Joi.string().trim(),
     search: Joi.string().trim(),
     activeOnly: Joi.boolean()

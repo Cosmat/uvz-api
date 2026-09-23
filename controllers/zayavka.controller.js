@@ -9,21 +9,21 @@ const getAll = [
   validateQuery(schemas.queryParams),
   async (req, res, next) => {
     try {
-      const { page, limit, sort, tzeh, professia, status, search } = req.query
+      const { page, limit, sort, tzeh, professia, status, schedule, experience_required, search } = req.query
       
       const filters = {}
       if (tzeh) filters.tzeh = tzeh
       if (professia) filters.professia = { $regex: escapeRegex(professia), $options: 'i' }
       if (status) filters.status = status
+      if (schedule) filters.schedule = schedule
+      if (experience_required) filters.experience_required = experience_required
 
-      let result
+      // search matches ONLY profession name (partial match, case-insensitive)
       if (search) {
-        // Search matches ONLY profession name (partial match, case-insensitive)
         filters.professia = { $regex: escapeRegex(search), $options: 'i' }
-        result = await zayavkaService.getAll({ page, limit, filters, sort })
-      } else {
-        result = await zayavkaService.getAll({ page, limit, filters, sort })
       }
+
+      const result = await zayavkaService.getAll({ page, limit, filters, sort })
 
       res.json({
         success: true,
