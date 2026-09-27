@@ -52,7 +52,8 @@ const schemas = {
   authRegister: Joi.object({
     username: Joi.string().trim().min(1).max(30).required(),
     password: Joi.string().min(1).max(100).required(),
-    role: Joi.string().valid('admin', 'moderator', 'user')
+    // Role is server-controlled; never trust client input
+    role: Joi.string().valid('admin', 'moderator', 'user').forbidden()
   }),
 
   queryParams: Joi.object({

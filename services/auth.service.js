@@ -48,7 +48,13 @@ class AuthService {
       throw new AppError('Username already exists', 409, 'USER_EXISTS')
     }
 
-    const user = new User({ username, password, role })
+    // Public registration can ONLY create regular users.
+    // Privileged roles are granted manually in the DB by an existing admin.
+    if (role !== 'user') {
+      throw new AppError('Роль назначается администратором', 403, 'ROLE_FORBIDDEN')
+    }
+
+    const user = new User({ username, password, role: 'user' })
     await user.save()
 
     const token = this.generateToken(user)
