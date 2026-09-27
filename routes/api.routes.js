@@ -9,11 +9,12 @@ const authController = require('../controllers/auth.controller')
 const router = Router()
 
 // Simple in-memory rate limit for anonymous vacancy creation:
-// 5 posts per IP per hour (Render free = single instance, in-memory is fine).
-// Logged-in users are still limited (10/hour) to stop mass-spam scripts.
+// 5 posts per IP per hour for guests, 10 for logged-in users
+// (Render free = single instance, in-memory is fine).
 const createHits = new Map() // ip -> { count, resetAt }
-const createRateLimit = (maxPerHour) => (req, res, next) => {
+const createRateLimit = (req, res, next) => {
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?').toString().split(',')[0].trim()
+  const maxPerHour = req.user ? 10 : 5
   const now = Date.now()
   let rec = createHits.get(ip)
   if (!rec || now > rec.resetAt) {
