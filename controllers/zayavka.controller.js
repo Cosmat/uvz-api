@@ -63,6 +63,18 @@ const update = [
   validate(schemas.zayavkaUpdate),
   async (req, res, next) => {
     try {
+      // Only the creator (or admin/moderator) may edit a vacancy
+      const existing = await zayavkaService.getById(req.params.id)
+      const userId = req.user._id.toString()
+      const role = req.user.role
+      if (role !== 'admin' && role !== 'moderator' &&
+          String(existing.id_sozdatelya || '') !== userId) {
+        return res.status(403).json({
+          success: false,
+          error: 'FORBIDDEN',
+          message: 'Можно редактировать только свои вакансии'
+        })
+      }
       const zayavka = await zayavkaService.update(req.params.id, req.validated)
       res.json({ success: true, data: zayavka })
     } catch (e) {
@@ -73,6 +85,18 @@ const update = [
 
 const archive = async (req, res, next) => {
   try {
+    // Only the creator (or admin/moderator) may archive a vacancy
+    const existing = await zayavkaService.getById(req.params.id)
+    const userId = req.user._id.toString()
+    const role = req.user.role
+    if (role !== 'admin' && role !== 'moderator' &&
+        String(existing.id_sozdatelya || '') !== userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'FORBIDDEN',
+        message: 'Можно архивировать только свои вакансии'
+      })
+    }
     const zayavka = await zayavkaService.archive(req.params.id)
     res.json({ success: true, data: zayavka })
   } catch (e) {

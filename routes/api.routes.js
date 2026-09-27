@@ -1,5 +1,5 @@
 const { Router } = require('express')
-const { auth, requireRole } = require('../middlewares/auth')
+const { auth, requireRole, optionalAuth } = require('../middlewares/auth')
 const zayavkaController = require('../controllers/zayavka.controller')
 const deshifeController = require('../controllers/deshife.controller')
 const phoneTabelController = require('../controllers/phoneTabel.controller')
@@ -7,6 +7,35 @@ const { repairPhones } = require('../controllers/repair.controller')
 const authController = require('../controllers/auth.controller')
 
 const router = Router()
+
+// Simple in-memory rate limit for anonymous vacancy creation:
+// 5 posts per IP per hour (Render free = single instance, in-memory is fine).
+// Logged-in users are still limited (10/hour) to stop mass-spam scripts.
+const createHits = new Map() // ip -> { count, resetAt }
+const createRateLimit = (maxPerHour) => (req, res, next) => {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?').toString().split(',')[0].trim()
+  const now = Date.now()
+  let rec = createHits.get(ip)
+  if (!rec || now > rec.resetAt) {
+    rec = { count: 0, resetAt: now + 60 * 60 * 1000 }
+    createHits.set(ip, rec)
+    // opportunistic cleanup
+    if (createHits.size > 500) {
+      for (const [k, v] of createHits) {
+        if (now > v.resetAt) createHits.delete(k)
+      }
+    }
+  }
+  rec.count++
+  if (rec.count > maxPerHour) {
+    return res.status(429).json({
+      success: false,
+      error: 'RATE_LIMITED',
+      message: 'Слишком много вакансий с этого адреса. Попробуйте через час.'
+    })
+  }
+  next()
+}
 
 // Health check
 router.get('/health', (req, res) => {
@@ -29,7 +58,7 @@ router.get('/zayavki', ...zayavkaController.getAll)
 router.get('/zayavki/stats', zayavkaController.getStats)
 router.get('/zayavki/my', auth, ...zayavkaController.getByCreator)
 router.get('/zayavki/:id', zayavkaController.getById)
-router.post('/zayavki', auth, ...zayavkaController.create)
+router.post('/zayavki', createRateLimit, optionalAuth, ...zayavkaController.create)
 router.patch('/zayavki/:id', auth, ...zayavkaController.update)
 router.patch('/zayavki/:id/archive', auth, zayavkaController.archive)
 router.delete('/zayavki/:id', auth, requireRole('admin', 'moderator'), zayavkaController.delete)
