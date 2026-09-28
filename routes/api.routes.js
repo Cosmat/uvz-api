@@ -11,9 +11,13 @@ const router = Router()
 // Simple in-memory rate limit for anonymous vacancy creation:
 // 5 posts per IP per hour for guests, 10 for logged-in users
 // (Render free = single instance, in-memory is fine).
+// SECURITY: take the LAST IP in X-Forwarded-For — that one is appended by the
+// trusted Render proxy; client-supplied entries at the front can be spoofed
+// (verified 28.09: arbitrary XFF bypassed the limit completely).
 const createHits = new Map() // ip -> { count, resetAt }
 const createRateLimit = (req, res, next) => {
-  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '?').toString().split(',')[0].trim()
+  const xff = (req.headers['x-forwarded-for'] || '').toString()
+  const ip = (xff ? xff.split(',').pop() : (req.socket.remoteAddress || '?')).trim()
   const maxPerHour = req.user ? 10 : 5
   const now = Date.now()
   let rec = createHits.get(ip)
