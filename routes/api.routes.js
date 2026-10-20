@@ -52,6 +52,43 @@ router.get('/health', (req, res) => {
   })
 })
 
+// --- Visit stats (anonymous beacon; no personal data stored) ---
+const SiteStats = require('../models/siteStats.model')
+
+// Front calls this once per browser session on load
+router.post('/stats/visit', async (req, res) => {
+  try {
+    const doc = await SiteStats.addVisit()
+    res.json({ success: true })
+  } catch (e) {
+    res.status(500).json({ success: false })
+  }
+})
+
+// Read aggregated stats: total, last 30 days, today
+router.get('/stats/visit', async (req, res) => {
+  try {
+    const doc = await SiteStats.findOne({ key: 'visits' }).lean()
+    if (!doc) return res.json({ success: true, total: 0, today: 0, last30: {}, lastVisit: null })
+    const today = new Date().toISOString().slice(0, 10)
+    const daily = doc.daily || {}
+    const last30 = {}
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(Date.now() - i * 86400000).toISOString().slice(0, 10)
+      if (daily[d]) last30[d] = daily[d]
+    }
+    res.json({
+      success: true,
+      total: doc.total || 0,
+      today: daily[today] || 0,
+      last30,
+      lastVisit: doc.lastVisit
+    })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
 // Auth routes (public)
 router.post('/auth/login', ...authController.login)
 router.post('/auth/register', ...authController.register)
